@@ -234,3 +234,176 @@ def build_all_reports(df: pd.DataFrame) -> dict:
     }
 
     return reports
+
+
+# 1) KPIs globales
+
+def compute_global_kpis(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    KPIs generales del dataset (una sola fila).
+    """
+    data = {
+        "total_sales": df["OutletSales"].sum(),
+        "avg_sales_per_record": df["OutletSales"].mean(),
+        "total_products": df["ProductID"].nunique(),
+        "total_outlets": df["OutletID"].nunique(),
+        "avg_mrp": df["MRP"].mean(),
+        "avg_visibility": df["ProductVisibility"].mean(),
+    }
+
+    if "OutletAge" in df.columns:
+        data["avg_outlet_age"] = df["OutletAge"].mean()
+
+    if "PriceSegment" in df.columns:
+        data["price_segments"] = df["PriceSegment"].nunique()
+
+    return pd.DataFrame([data])
+
+
+# 2) KPIs por tienda
+
+def compute_outlet_kpis(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Métricas por OutletID.
+    """
+    kpis = (
+        df.groupby("OutletID", dropna=False)
+        .agg(
+            total_sales=("OutletSales", "sum"),
+            avg_sales=("OutletSales", "mean"),
+            records=("OutletSales", "size"),
+            unique_products=("ProductID", "nunique"),
+            avg_mrp=("MRP", "mean"),
+            avg_visibility=("ProductVisibility", "mean"),
+            outlet_age=("OutletAge", "mean"),
+        )
+        .reset_index()
+        .sort_values(by="total_sales", ascending=False)
+    )
+    return kpis
+
+
+# 3) KPIs por tipo de producto
+
+def compute_product_type_kpis(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Métricas por ProductType.
+    """
+    kpis = (
+        df.groupby("ProductType", dropna=False)
+        .agg(
+            total_sales=("OutletSales", "sum"),
+            avg_sales=("OutletSales", "mean"),
+            records=("OutletSales", "size"),
+            unique_products=("ProductID", "nunique"),
+            avg_mrp=("MRP", "mean"),
+            avg_visibility=("ProductVisibility", "mean"),
+        )
+        .reset_index()
+        .sort_values(by="total_sales", ascending=False)
+    )
+    return kpis
+
+
+# 4) KPIs por contenido graso
+
+def compute_fat_content_kpis(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Métricas por FatContent.
+    """
+    kpis = (
+        df.groupby("FatContent", dropna=False)
+        .agg(
+            total_sales=("OutletSales", "sum"),
+            avg_sales=("OutletSales", "mean"),
+            records=("OutletSales", "size"),
+            unique_products=("ProductID", "nunique"),
+            avg_mrp=("MRP", "mean"),
+        )
+        .reset_index()
+        .sort_values(by="total_sales", ascending=False)
+    )
+    return kpis
+
+
+# 5) KPIs por tipo de outlet
+
+def compute_outlet_type_kpis(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Métricas por OutletType.
+    """
+    kpis = (
+        df.groupby("OutletType", dropna=False)
+        .agg(
+            total_sales=("OutletSales", "sum"),
+            avg_sales=("OutletSales", "mean"),
+            records=("OutletSales", "size"),
+            unique_outlets=("OutletID", "nunique"),
+            avg_mrp=("MRP", "mean"),
+        )
+        .reset_index()
+        .sort_values(by="total_sales", ascending=False)
+    )
+    return kpis
+
+
+# 6) KPIs por segmento de precio
+
+def compute_price_segment_kpis(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Métricas por PriceSegment (Low / Medium / High / Premium).
+    """
+    if "PriceSegment" not in df.columns:
+        raise ValueError("PriceSegment not found. Run add_price_segments() first.")
+
+    kpis = (
+        df.groupby("PriceSegment", dropna=False)
+        .agg(
+            total_sales=("OutletSales", "sum"),
+            avg_sales=("OutletSales", "mean"),
+            records=("OutletSales", "size"),
+            unique_products=("ProductID", "nunique"),
+            avg_mrp=("MRP", "mean"),
+        )
+        .reset_index()
+        .sort_values(by="total_sales", ascending=False)
+    )
+    return kpis
+
+
+# 7) Top N productos
+
+def compute_top_products(df: pd.DataFrame, top_n: int = 10) -> pd.DataFrame:
+    """
+    Top N productos por ventas totales.
+    """
+    kpis = (
+        df.groupby("ProductID", dropna=False)
+        .agg(
+            total_sales=("OutletSales", "sum"),
+            avg_sales=("OutletSales", "mean"),
+            avg_mrp=("MRP", "mean"),
+            outlets_selling=("OutletID", "nunique"),
+        )
+        .reset_index()
+        .sort_values(by="total_sales", ascending=False)
+        .head(top_n)
+    )
+    return kpis
+
+
+# 8) Helper para obtener todas las tablas de KPIs
+
+def compute_all_kpi_tables(df: pd.DataFrame) -> dict:
+    """
+    Ejecuta todas las funciones de métricas y devuelve un diccionario de DataFrames.
+    """
+    return {
+        "global_kpis": compute_global_kpis(df),
+        "outlet_kpis": compute_outlet_kpis(df),
+        "product_type_kpis": compute_product_type_kpis(df),
+        "fat_content_kpis": compute_fat_content_kpis(df),
+        "outlet_type_kpis": compute_outlet_type_kpis(df),
+        "price_segment_kpis": compute_price_segment_kpis(df),
+        "top_products": compute_top_products(df, top_n=10),
+    }
