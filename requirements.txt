@@ -3,5 +3,6 @@ numpy
 matplotlib
 seaborn
 openpyxl
-xlsxwriter
+XlsxWriter
 jupyter
+pytest

@@ -3,7 +3,7 @@ from typing import List
 import pandas as pd
 
 # Rutas y patrones por defecto
-RAW_STORES_DIR = Path("data/raw/stores")
+RAW_STORES_DIR = Path("./data/raw/stores")
 DEFAULT_STORE_PATTERN = "*.csv"
 STORE_ID_COL = "OutletID"
 
